@@ -799,7 +799,10 @@ function send(res, status, payload, type = 'application/json; charset=utf-8') {
 
 export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost');
-  const path = url.pathname.replace(/^\/api(?=\/|$)/, '') || '/';
+  // On Vercel every path is rewritten to /api?__route=<original path> (see vercel.json).
+  const forwarded = url.searchParams.get('__route');
+  url.searchParams.delete('__route');
+  const path = (forwarded ?? url.pathname).replace(/^\/api(?=\/|$)/, '') || '/';
   try {
     if (req.method === 'GET' && (path === '/admin' || path === '/admin/')) return send(res, 200, adminPage, 'text/html; charset=utf-8');
     if (req.method === 'GET' && path === '/') {

@@ -258,4 +258,9 @@ test('validation and admin access', async () => {
   const page = await fetch(base + '/admin');
   assert.match(await page.text(), /PantryPulse Admin/);
   assert.equal((await call('GET', '/health')).body.ok, true);
+  // Vercel rewrite form: /api?__route=<original path>&<original query>.
+  const viaRewrite = await call('GET', `/api?__route=/listings/nearby&lat=${HOME.lat}&lon=${HOME.lon}&radiusKm=2`, { token: u.token });
+  assert.equal(viaRewrite.status, 200);
+  assert.ok(Array.isArray(viaRewrite.body.listings));
+  assert.equal((await call('GET', '/api?__route=/health')).body.ok, true);
 });
