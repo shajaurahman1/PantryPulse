@@ -10,6 +10,9 @@ import com.pantrypulse.app.domain.Category
 import com.pantrypulse.app.domain.HouseholdType
 import com.pantrypulse.app.domain.ProductStatus
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -87,6 +90,16 @@ class RepositoryTest {
         val restocked = c.pantry.observeActive(hh).first().single()
         assertEquals(LocalDate.now().plusDays(7), restocked.expiryDate)
         assertEquals("Fridge", c.pantry.locations(hh).first { it.id == restocked.locationId }.name)
+    }
+
+    @Test fun rapidTapsNeverLoseAnUpdate() = runBlocking {
+        val u = c.auth.signUp("Kim", "kim@example.com", "123456")
+        val hh = c.session.current().householdId!!
+        val id = c.pantry.save(ProductEntity(householdId = hh, name = "Eggs", quantity = 12.0, addedBy = u.id))
+        coroutineScope { repeat(12) { launch(Dispatchers.Default) { c.pantry.consume(id) } } }
+        val p = c.pantry.product(id)!!
+        assertEquals(0.0, p.quantity, 0.0)
+        assertEquals(ProductStatus.FINISHED, p.status)
     }
 
     @Test fun expiringQuery() = runBlocking {

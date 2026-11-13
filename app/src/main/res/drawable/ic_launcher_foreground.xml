@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- PantryPulse "p" mark with the pulse line, drawn in the 1254px space of the source logo. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:strokeColor="#FF5A2C" android:strokeWidth="6.5"
-        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
-        android:pathData="M30,56 L43,56 L49,40 L59,70 L65,56 L78,56" />
+    android:viewportWidth="1254" android:viewportHeight="1254">
+    <group android:pivotX="627" android:pivotY="627" android:scaleX="0.62" android:scaleY="0.62"
+        android:translateX="-4" android:translateY="-11">
+        <path android:fillColor="#17140F"
+            android:pathData="M380,248 L440,248 Q492,248 497,300 L490,520 L490,981 Q490,1046 425,1046 L380,1046 Q315,1046 315,981 L315,313 Q315,248 380,248 Z" />
+        <path android:fillColor="#17140F"
+            android:pathData="M328,565 A312,323 0 1,0 952,565 A312,323 0 1,0 328,565 Z" />
+        <path android:fillColor="#FF5A2C"
+            android:pathData="M450,568 A188,197 0 1,0 826,568 A188,197 0 1,0 450,568 Z" />
+        <path android:strokeColor="#17140F" android:strokeWidth="57"
+            android:strokeLineJoin="round" android:strokeLineCap="round" android:fillColor="#00000000"
+            android:pathData="M430,584 L525,584 L600,482 L683,664 L742,564 L840,564" />
+    </group>
 </vector>

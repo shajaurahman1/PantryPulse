@@ -5,12 +5,17 @@ import com.pantrypulse.app.data.db.LocationEntity
 import com.pantrypulse.app.data.db.ProductEntity
 import com.pantrypulse.app.domain.ProductStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 class PantryRepository(private val db: AppDatabase) {
     private val products get() = db.productDao()
     private val locations get() = db.locationDao()
+
+    /** Serialises read-modify-write updates so quick repeated taps never lose a change. */
+    private val writeLock = Mutex()
 
     fun observeActive(householdId: Long) = products.observeActive(householdId)
     fun observeHistory(householdId: Long) = products.observeHistory(householdId)
@@ -37,7 +42,7 @@ class PantryRepository(private val db: AppDatabase) {
      * Uses [amount] of a product. Returns the updated product; when the quantity reaches
      * zero it is marked finished so the UI can offer to add it to the shopping list.
      */
-    suspend fun consume(id: Long, amount: Double = 1.0): ProductEntity? = withContext(Dispatchers.IO) {
+    suspend fun consume(id: Long, amount: Double = 1.0): ProductEntity? = withContext(Dispatchers.IO) { writeLock.withLock {
         val p = products.findById(id) ?: return@withContext null
         val left = (p.quantity - amount).coerceAtLeast(0.0)
         val updated = if (left <= 0.0001) {
@@ -45,9 +50,9 @@ class PantryRepository(private val db: AppDatabase) {
         } else p.copy(quantity = left)
         products.update(updated.copy(updatedAt = System.currentTimeMillis()))
         updated
-    }
+    } }
 
-    suspend fun setStatus(id: Long, status: ProductStatus): ProductEntity? = withContext(Dispatchers.IO) {
+    suspend fun setStatus(id: Long, status: ProductStatus): ProductEntity? = withContext(Dispatchers.IO) { writeLock.withLock {
         val p = products.findById(id) ?: return@withContext null
         val updated = p.copy(
             status = status,
@@ -57,7 +62,7 @@ class PantryRepository(private val db: AppDatabase) {
         )
         products.update(updated)
         updated
-    }
+    } }
 
     suspend fun expiringWithin(householdId: Long, days: Int, today: LocalDate = LocalDate.now()) =
         withContext(Dispatchers.IO) { products.expiringBefore(householdId, today.plusDays(days.toLong()).toEpochDay()) }

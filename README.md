@@ -1,3 +1,5 @@
+<img src="docs/logo-512.png" width="96" align="right">
+
 # PantryPulse — Smart Inventory & Waste Reduction Hub
 
 An Android app that tracks what's in your fridge, freezer, pantry, bathroom and medicine cabinet, nudges you before things expire, suggests recipes that use them up, and helps you donate what you won't eat.
@@ -6,9 +8,14 @@ An Android app that tracks what's in your fridge, freezer, pantry, bathroom and 
 <img src="docs/screenshots/02_home.png" width="240"> <img src="docs/screenshots/07_recipes.png" width="240"> <img src="docs/screenshots/06_shopping.png" width="240">
 </p>
 
-## Install
+## Download
 
-Download `PantryPulse.apk` from [`release/`](release/) (or the **Build & test** workflow artifacts), open it on an Android phone (Android 8.0+) and allow "Install unknown apps" when asked.
+| File | Use it for |
+|------|-----------|
+| [**PantryPulse.apk**](../../releases/latest/download/PantryPulse.apk) | Install directly on an Android phone (Android 8.0+). Allow "Install unknown apps" when asked. |
+| [**PantryPulse.aab**](../../releases/latest/download/PantryPulse.aab) | Upload to Google Play Console. |
+
+Every push to `main` runs the tests, rebuilds both files and refreshes the latest release, so these links always serve the newest build. Copies of the current build are also in [`release/`](release/).
 
 ## Features
 
@@ -38,8 +45,9 @@ Everything is stored in a local Room database on the phone. Photos for barcode, 
 Requirements: JDK 17+, Android SDK 35.
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 39 unit + Robolectric UI tests, writes screenshots to app/build/screenshots
+./gradlew :app:testDebugUnitTest   # 41 unit + Robolectric UI tests, writes screenshots to app/build/screenshots
 ./gradlew :app:assembleRelease     # app/build/outputs/apk/release/app-release.apk
+./gradlew :app:bundleRelease       # app/build/outputs/bundle/release/app-release.aab (Google Play)
 ```
 
 Release signing reads `PANTRYPULSE_KEYSTORE`, `PANTRYPULSE_KEYSTORE_PASSWORD`, `PANTRYPULSE_KEY_ALIAS` and `PANTRYPULSE_KEY_PASSWORD` (environment variables or `pantrypulse.*` Gradle properties). Without them the APK is signed with the standard debug key — fine for side-loading, but create your own key before publishing to Google Play.

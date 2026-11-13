@@ -1,9 +1,13 @@
-name: Build & test
+name: Build, test & release
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -15,16 +19,41 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+
       - name: Unit & UI tests
         run: ./gradlew :app:testDebugUnitTest
-      - name: Build release APK
-        run: ./gradlew :app:assembleRelease
+
+      - name: Build APK and App Bundle
+        run: |
+          ./gradlew :app:assembleRelease :app:bundleRelease
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/PantryPulse.apk
+          cp app/build/outputs/bundle/release/app-release.aab out/PantryPulse.aab
+
       - uses: actions/upload-artifact@v4
         with:
-          name: PantryPulse-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: PantryPulse
+          path: out/
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: screenshots
           path: app/build/screenshots
+
+      # Publishes (or refreshes) the v1.0.0 release so these links always serve the latest build:
+      #   https://github.com/<owner>/<repo>/releases/latest/download/PantryPulse.apk
+      #   https://github.com/<owner>/<repo>/releases/latest/download/PantryPulse.aab
+      - name: Publish GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/PantryPulse.apk out/PantryPulse.aab --clobber
+          else
+            gh release create "$TAG" out/PantryPulse.apk out/PantryPulse.aab \
+              --title "PantryPulse $TAG" --latest \
+              --notes "PantryPulse.apk — install directly on Android 8.0+. PantryPulse.aab — upload to Google Play Console."
+          fi
