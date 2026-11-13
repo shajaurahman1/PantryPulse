@@ -1,0 +1,51 @@
+# PantryPulse — Smart Inventory & Waste Reduction Hub
+
+An Android app that tracks what's in your fridge, freezer, pantry, bathroom and medicine cabinet, nudges you before things expire, suggests recipes that use them up, and helps you donate what you won't eat.
+
+<p>
+<img src="docs/screenshots/02_home.png" width="240"> <img src="docs/screenshots/07_recipes.png" width="240"> <img src="docs/screenshots/06_shopping.png" width="240">
+</p>
+
+## Install
+
+Download `PantryPulse.apk` from [`release/`](release/) (or the **Build & test** workflow artifacts), open it on an Android phone (Android 8.0+) and allow "Install unknown apps" when asked.
+
+## Features
+
+| # | Feature | How it works |
+|---|---------|--------------|
+| 1 | Add products with expiry dates | Manual entry with date picker and quick chips (+3 days, +1 week, typical shelf life for the category). |
+| 2 | Expiry notifications | A daily check (~9 am, WorkManager) notifies about items expiring within your chosen window (1–14 days). "Check now" in Profile. |
+| 3 | Available products | Home screen: "N things want using up before Friday", weekly pulse chart, Food / Cosmetics / Medicine tabs, ticket cards with days left. |
+| 4 | Profile login | Email + password accounts (PBKDF2-hashed, never stored in plain text), quick profile picker on the sign-in screen. |
+| 5 | Recipe suggestions | Built-in recipes ranked by how many expiring items they rescue, plus online ideas by ingredient from TheMealDB. |
+| 6 | Expiry date from photo | Live camera OCR (ML Kit, on-device) reads "EXP 12/08/26", "BEST BEFORE 12 AUG 2026", "USE BY 2026-08-12", "08/27"… and prefers the expiry date over the manufacture date. Gallery photos work too. |
+| 7 | Barcode scanning | ML Kit barcode scanner; product name, brand, category and photo filled from Open Food Facts (or your own history). |
+| 8 | Storage locations | Fridge, Freezer, Pantry, Counter, Cupboard, Bathroom, Medicine cabinet — plus your own. Filter chips with counts. |
+| 9 | Multi-user households | Family, Roommates or Office breakroom households with invite codes, member profiles, household switching. Everyone shares one pantry and one shopping list. |
+| 10 | Receipt scanning | Photo of a paper receipt, screenshot of a digital one, or pasted text → items with quantities and suggested expiry dates to review and add. |
+| 11 | Food rescue map | Finds food banks, community fridges, give-boxes and sharing points near you (OpenStreetMap / Overpass), with map, directions, phone and website. "Offer to neighbours" shares a list; "I've donated these" logs it. |
+| 12 | One-tap shopping list | When an item hits zero or is marked finished, a snackbar offers **Add to list** (or turn on auto-add). Bought items move back to the pantry in one tap. |
+
+## Data & privacy
+
+Everything is stored in a local Room database on the phone. Photos for barcode, date and receipt scanning are processed on-device and never uploaded. The app calls only free, key-less public services: Open Food Facts (barcode lookups), TheMealDB (online recipes), OpenStreetMap Overpass and Nominatim (food rescue search) and OpenStreetMap tiles (map).
+
+**Sharing is per device.** Households, invite codes and member profiles let several people share one phone or kitchen/breakroom tablet. Syncing a household across *different* phones needs a cloud backend (for example Firebase or Supabase), which is the natural next step.
+
+## Build
+
+Requirements: JDK 17+, Android SDK 35.
+
+```bash
+./gradlew :app:testDebugUnitTest   # 39 unit + Robolectric UI tests, writes screenshots to app/build/screenshots
+./gradlew :app:assembleRelease     # app/build/outputs/apk/release/app-release.apk
+```
+
+Release signing reads `PANTRYPULSE_KEYSTORE`, `PANTRYPULSE_KEYSTORE_PASSWORD`, `PANTRYPULSE_KEY_ALIAS` and `PANTRYPULSE_KEY_PASSWORD` (environment variables or `pantrypulse.*` Gradle properties). Without them the APK is signed with the standard debug key — fine for side-loading, but create your own key before publishing to Google Play.
+
+## Tech
+
+Kotlin · Jetpack Compose (Material 3) · Room · DataStore · WorkManager · CameraX · ML Kit (barcode + text recognition, bundled models) · Coil · osmdroid. Min SDK 26, target SDK 35.
+
+Design: warm paper `#F2EFE9`, ink `#17140F`, pulse orange `#FF5A2C`; type in Bricolage Grotesque and DM Mono (both SIL Open Font License 1.1, see `app/FONTS_LICENSE.txt`).

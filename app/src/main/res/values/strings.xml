@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">PantryPulse</string>
+    <string name="channel_expiry_name">Expiry alerts</string>
+    <string name="channel_expiry_desc">Reminders when food in your pantry is about to expire</string>
+</resources>

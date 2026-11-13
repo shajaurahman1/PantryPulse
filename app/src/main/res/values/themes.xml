@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.PantryPulse" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+    <style name="Theme.PantryPulse.Splash" parent="Theme.PantryPulse">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+</resources>
