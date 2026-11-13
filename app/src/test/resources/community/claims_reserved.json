@@ -1,0 +1,34 @@
+{
+  "listings": [
+    {
+      "id": "2c986b2d-b470-4e8f-a8f4-29963e287014",
+      "title": "Sourdough loaf",
+      "category": "BAKERY",
+      "quantityText": "1 loaf",
+      "notes": "Unopened",
+      "itemExpiry": "2026-11-14",
+      "pickupDeadline": 1794577711225,
+      "areaLabel": "Fresh Mart",
+      "claimMode": "approval",
+      "status": "reserved",
+      "createdAt": 1794556111228,
+      "donor": {
+        "name": "Fresh Mart",
+        "isShop": true,
+        "openingHours": "8am–9pm"
+      },
+      "approxLat": 12.97,
+      "approxLon": 77.59,
+      "isMine": false,
+      "claimedByMe": true,
+      "pickup": {
+        "lat": 12.9716,
+        "lon": 77.5946,
+        "address": "5 Market St",
+        "instructions": "Ask at the till",
+        "code": "6031"
+      },
+      "myRequestStatus": "accepted"
+    }
+  ]
+}

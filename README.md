@@ -33,19 +33,25 @@ Every push to `main` runs the tests, rebuilds both files and refreshes the lates
 | 10 | Receipt scanning | Photo of a paper receipt, screenshot of a digital one, or pasted text → items with quantities and suggested expiry dates to review and add. |
 | 11 | Food rescue map | Finds food banks, community fridges, give-boxes and sharing points near you (OpenStreetMap / Overpass), with map, directions, phone and website. "Offer to neighbours" shares a list; "I've donated these" logs it. |
 | 12 | One-tap shopping list | When an item hits zero or is marked finished, a snackbar offers **Add to list** (or turn on auto-add). Bought items move back to the pantry in one tap. |
+| 13 | **Giveaways (peer-to-peer)** | "Give away nearby" on any food item: approximate location, public area name, private exact address and instructions, pickup deadline, notes (unopened, sealed…), and **Allow direct claim (first-come, first-served)** or **Require my approval**. A Nearby feed filters by 2 / 5 / 10 / 25 km and sorts by distance or urgency. Only one person can ever claim an item (atomic database update); approving one request closes the rest. Status: available → reserved → picked up (or expired); donors can release no-shows. Addresses stay hidden until a claim is confirmed. |
+| 14 | **Shop accounts** | Shopkeepers sign up as a shop (name, address, opening hours) and get a dashboard: live / requests / booked / rescued counts, post several surplus items in one go, approve requests and confirm pickups. |
+
+## Backend
+
+Giveaways and shop accounts use a small online service in [`backend/`](backend/) — a Node.js API on **Vercel** with a **Turso** database. See [backend/README.md](backend/README.md) for how to access the data, the admin page, the API and the one-time secret setup.
 
 ## Data & privacy
 
-Everything is stored in a local Room database on the phone. Photos for barcode, date and receipt scanning are processed on-device and never uploaded. The app calls only free, key-less public services: Open Food Facts (barcode lookups), TheMealDB (online recipes), OpenStreetMap Overpass and Nominatim (food rescue search) and OpenStreetMap tiles (map).
+Your pantry, shopping list and households are stored in a local Room database on the phone; only giveaways and your community account go to the backend. Photos for barcode, date and receipt scanning are processed on-device and never uploaded. The app calls only free, key-less public services: Open Food Facts (barcode lookups), TheMealDB (online recipes), OpenStreetMap Overpass and Nominatim (food rescue search) and OpenStreetMap tiles (map).
 
-**Sharing is per device.** Households, invite codes and member profiles let several people share one phone or kitchen/breakroom tablet. Syncing a household across *different* phones needs a cloud backend (for example Firebase or Supabase), which is the natural next step.
+**Household sharing is per device.** Households, invite codes and member profiles let several people share one phone or kitchen/breakroom tablet; giveaways work across all phones through the backend.
 
 ## Build
 
 Requirements: JDK 17+, Android SDK 35.
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 41 unit + Robolectric UI tests, writes screenshots to app/build/screenshots
+./gradlew :app:testDebugUnitTest   # 49 unit + Robolectric UI tests, writes screenshots to app/build/screenshots
 ./gradlew :app:assembleRelease     # app/build/outputs/apk/release/app-release.apk
 ./gradlew :app:bundleRelease       # app/build/outputs/bundle/release/app-release.aab (Google Play)
 ```

@@ -91,7 +91,12 @@ private sealed interface ProfileDialog {
 }
 
 @Composable
-fun ProfileScreen(vm: MainViewModel, contentPadding: PaddingValues, onRescue: () -> Unit) {
+fun ProfileScreen(
+    vm: MainViewModel,
+    contentPadding: PaddingValues,
+    onRescue: () -> Unit,
+    community: (@Composable () -> Unit)? = null,
+) {
     val c = PulseTheme.colors
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -191,6 +196,11 @@ fun ProfileScreen(vm: MainViewModel, contentPadding: PaddingValues, onRescue: ()
                     })
                 }
             }
+        }
+
+        if (community != null) {
+            item { SectionTitle("Community") }
+            item { community() }
         }
 
         // Storage

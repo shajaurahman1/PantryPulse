@@ -155,4 +155,15 @@ class MainViewModel(val container: AppContainer) : ViewModel() {
     fun switchHousehold(id: Long) = launchSafe { container.households.switchTo(id) }
 
     fun signOut() = launchSafe { container.auth.signOut() }
+
+    /**
+     * Links the signed-in profile to its online community account. Runs in the ViewModel
+     * so it survives the sign-in screen closing; failures (e.g. offline) are not fatal.
+     */
+    fun connectCommunity(email: String, password: String, name: String, shop: com.pantrypulse.app.data.community.ShopProfile?) {
+        viewModelScope.launch {
+            runCatching { container.community.connect(email, password, name, shop) }
+                .onFailure { message("Signed in. Giveaways will connect when you're online.") }
+        }
+    }
 }

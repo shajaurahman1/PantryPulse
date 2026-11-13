@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,6 +69,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pantrypulse.app.notifications.ExpiryNotifier
 import kotlinx.coroutines.launch
+import com.pantrypulse.app.ui.community.CommunityProfileCard
+import com.pantrypulse.app.ui.community.CommunityViewModel
+import com.pantrypulse.app.ui.community.GiveAwayFormScreen
+import com.pantrypulse.app.ui.community.GiveawaysScreen
+import com.pantrypulse.app.ui.community.ShopPostScreen
 import com.pantrypulse.app.ui.components.ActionRow
 import com.pantrypulse.app.ui.components.PulseMark
 import com.pantrypulse.app.ui.screens.AuthScreen
@@ -97,6 +103,11 @@ object Routes {
     const val SCAN_RECEIPT = "scan/receipt"
     const val RECIPE = "recipe/{id}"
     const val RESCUE = "rescue?productId={productId}"
+    const val GIVEAWAYS = "giveaways"
+    const val GIVE_AWAY = "giveaway/new?productId={productId}"
+    const val SHOP_POST = "giveaway/shop"
+
+    fun giveAway(productId: Long?) = "giveaway/new?productId=${productId ?: -1}"
 
     fun editor(id: Long? = null, barcode: String? = null) = "editor?id=${id ?: -1}" + (barcode?.let { "&barcode=$it" } ?: "")
     fun recipes(focus: String? = null) = "recipes" + (focus?.let { "?focus=${android.net.Uri.encode(it)}" } ?: "")
@@ -127,6 +138,7 @@ private data class Tab(val route: String, val base: String, val icon: ImageVecto
 private val tabs = listOf(
     Tab(Routes.HOME, "home", Icons.Outlined.GridView, "Pantry"),
     Tab(Routes.RECIPES, "recipes", Icons.Outlined.Restaurant, "Recipes"),
+    Tab(Routes.GIVEAWAYS, "giveaways", Icons.Outlined.VolunteerActivism, "Giveaways"),
     Tab(Routes.SHOPPING, "shopping", Icons.Outlined.Checklist, "Shopping list"),
     Tab(Routes.PROFILE, "profile", Icons.Outlined.Person, "Profile"),
 )
@@ -223,7 +235,29 @@ private fun AppNavHost(
                 onRescue = { nav.navigate(Routes.rescue(it)) },
                 onRecipesFor = { nav.navigate(Routes.recipes(it)) { launchSingleTop = true } },
                 onAdd = onAdd,
+                onGiveAway = { nav.navigate(Routes.giveAway(it)) },
             )
+        }
+        composable(Routes.GIVEAWAYS) {
+            val cvm = appViewModel(owner = activityOwner) { CommunityViewModel(it) }
+            GiveawaysScreen(vm, cvm, padding, onNewGiveaway = { nav.navigate(Routes.giveAway(null)) }, onShopPost = { nav.navigate(Routes.SHOP_POST) })
+        }
+        composable(Routes.GIVE_AWAY, arguments = listOf(navArgument("productId") { type = NavType.LongType; defaultValue = -1L })) { entry ->
+            val cvm = appViewModel(owner = activityOwner) { CommunityViewModel(it) }
+            val pid = entry.arguments?.getLong("productId")?.takeIf { it > 0 }
+            val community by cvm.state.collectAsState()
+            if (community.connected) {
+                GiveAwayFormScreen(vm, cvm, pid,
+                    onDone = { nav.navigate(Routes.GIVEAWAYS) { popUpTo(Routes.HOME) } },
+                    onBack = { nav.popBackStack() })
+            } else {
+                // Not linked to the community yet: show the connect card first.
+                GiveawaysScreen(vm, cvm, padding, onNewGiveaway = {}, onShopPost = {})
+            }
+        }
+        composable(Routes.SHOP_POST) {
+            val cvm = appViewModel(owner = activityOwner) { CommunityViewModel(it) }
+            ShopPostScreen(vm, cvm, onDone = { nav.navigate(Routes.GIVEAWAYS) { popUpTo(Routes.HOME) } }, onBack = { nav.popBackStack() })
         }
         composable(Routes.RECIPES, arguments = listOf(navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
             val rvm = appViewModel(owner = activityOwner) { RecipesViewModel(it) }
@@ -234,7 +268,12 @@ private fun AppNavHost(
             RecipeDetailScreen(entry.arguments?.getString("id").orEmpty(), vm, rvm) { nav.popBackStack() }
         }
         composable(Routes.SHOPPING) { ShoppingScreen(vm, padding) }
-        composable(Routes.PROFILE) { ProfileScreen(vm, padding) { nav.navigate(Routes.rescue(null)) } }
+        composable(Routes.PROFILE) {
+            val cvm = appViewModel(owner = activityOwner) { CommunityViewModel(it) }
+            ProfileScreen(vm, padding, onRescue = { nav.navigate(Routes.rescue(null)) }, community = {
+                CommunityProfileCard(vm, cvm) { nav.navigate("giveaways") { launchSingleTop = true } }
+            })
+        }
         composable(
             Routes.EDITOR,
             arguments = listOf(
@@ -301,17 +340,17 @@ private fun FloatingNavBar(current: String?, shoppingCount: Int, onTab: (Tab) ->
     val ink = Color(0xFF17140F)
     val paper = Color(0xFFF2EFE9)
     Row(
-        modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth()
-            .clip(RoundedCornerShape(50)).background(ink).padding(horizontal = 10.dp, vertical = 10.dp)
+        modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth()
+            .clip(RoundedCornerShape(50)).background(ink).padding(horizontal = 8.dp, vertical = 8.dp)
             .testTag("nav_bar"),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val items: List<Tab?> = listOf(tabs[0], tabs[1], null, tabs[2], tabs[3])
+        val items: List<Tab?> = listOf(tabs[0], tabs[1], null, tabs[2], tabs[3], tabs[4])
         items.forEach { tab ->
             if (tab == null) {
                 Box(
-                    Modifier.size(64.dp).clip(CircleShape).background(c.accent)
+                    Modifier.size(58.dp).clip(CircleShape).background(c.accent)
                         .clickable(role = Role.Button, onClick = onAdd)
                         .semantics { contentDescription = "Add item" }
                         .testTag("nav_add"),
@@ -320,13 +359,13 @@ private fun FloatingNavBar(current: String?, shoppingCount: Int, onTab: (Tab) ->
             } else {
                 val active = current == tab.route
                 Box(
-                    Modifier.size(56.dp).clip(CircleShape).background(if (active) c.accent else Color.Transparent)
+                    Modifier.size(50.dp).clip(CircleShape).background(if (active) c.accent else Color.Transparent)
                         .clickable(role = Role.Tab) { onTab(tab) }
                         .semantics { contentDescription = tab.label; selected = active }
                         .testTag("nav_${tab.base}"),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(tab.icon, null, tint = if (active) ink else paper, modifier = Modifier.size(28.dp))
+                    Icon(tab.icon, null, tint = if (active) ink else paper, modifier = Modifier.size(26.dp))
                     if (tab.base == "shopping" && shoppingCount > 0 && !active) {
                         Box(
                             Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp).size(10.dp).clip(CircleShape).background(c.accent),

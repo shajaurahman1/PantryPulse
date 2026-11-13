@@ -47,7 +47,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.pantrypulse.app.data.community.ShopProfile
 import com.pantrypulse.app.data.db.UserEntity
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import com.pantrypulse.app.ui.MainViewModel
 import com.pantrypulse.app.ui.components.ChipRow
 import com.pantrypulse.app.ui.components.InitialsAvatar
@@ -72,6 +75,10 @@ fun AuthScreen(vm: MainViewModel) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     var busy by rememberSaveable { mutableStateOf(false) }
+    var isShop by rememberSaveable { mutableStateOf(false) }
+    var shopName by rememberSaveable { mutableStateOf("") }
+    var shopAddress by rememberSaveable { mutableStateOf("") }
+    var openingHours by rememberSaveable { mutableStateOf("") }
 
     fun submit() {
         if (busy) return
@@ -79,8 +86,13 @@ fun AuthScreen(vm: MainViewModel) {
         error = null
         scope.launch(Dispatchers.Main) {
             try {
-                if (mode == 1) vm.container.auth.signUp(name, email, password)
+                if (mode == 1 && isShop && shopName.isBlank()) throw IllegalArgumentException("Please enter your shop's name.")
+                val user = if (mode == 1) vm.container.auth.signUp(name, email, password)
                 else vm.container.auth.signIn(email, password)
+                // Link the profile to the online community (giveaways). Works offline too:
+                // if this fails, the Giveaways tab asks to connect later.
+                val shop = if (mode == 1 && isShop) ShopProfile(shopName.trim(), shopAddress.trim(), openingHours.trim(), null, null) else null
+                vm.connectCommunity(user.email, password, user.displayName, shop)
             } catch (e: Exception) {
                 error = e.message
             } finally {
@@ -121,6 +133,21 @@ fun AuthScreen(vm: MainViewModel) {
         if (mode == 1) {
             PulseTextField(name, { name = it }, "Your name",
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next))
+        }
+        if (mode == 1) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("I run a shop", style = MaterialTheme.typography.titleSmall, color = c.ink)
+                    Text("Shops get a dashboard to post surplus stock for local people.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                }
+                Switch(isShop, { isShop = it }, modifier = Modifier.testTag("shop_switch"),
+                    colors = SwitchDefaults.colors(checkedThumbColor = c.card, checkedTrackColor = c.accent, uncheckedTrackColor = c.card))
+            }
+            if (isShop) {
+                PulseTextField(shopName, { shopName = it }, "Shop name")
+                PulseTextField(shopAddress, { shopAddress = it }, "Shop address")
+                PulseTextField(openingHours, { openingHours = it }, "Opening hours, e.g. 8am–9pm")
+            }
         }
         PulseTextField(email, { email = it.trim() }, "Email",
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next))

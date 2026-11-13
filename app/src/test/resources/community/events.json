@@ -1,0 +1,11 @@
+{
+  "events": [
+    {
+      "id": 2,
+      "type": "accepted",
+      "listingId": "2c986b2d-b470-4e8f-a8f4-29963e287014",
+      "message": "Your request for “Sourdough loaf” was accepted! Pickup code 6031.",
+      "createdAt": 1794556111258
+    }
+  ]
+}

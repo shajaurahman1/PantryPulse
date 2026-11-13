@@ -1,0 +1,80 @@
+{
+  "listings": [
+    {
+      "id": "519d5dcf-ba43-45c8-bd49-e659be80d0d2",
+      "title": "Bananas",
+      "category": "OTHER",
+      "quantityText": "1 kg",
+      "notes": "",
+      "itemExpiry": null,
+      "pickupDeadline": 1794581311225,
+      "areaLabel": "",
+      "claimMode": "direct",
+      "status": "available",
+      "createdAt": 1794556111235,
+      "donor": {
+        "name": "Fresh Mart",
+        "isShop": true,
+        "openingHours": "8am–9pm"
+      },
+      "approxLat": 12.97,
+      "approxLon": 77.59,
+      "isMine": true,
+      "claimedByMe": false,
+      "pickup": {
+        "lat": 12.9716,
+        "lon": 77.5946,
+        "address": "5 Market St",
+        "instructions": "",
+        "code": null
+      },
+      "clientProductId": null,
+      "claimedBy": null,
+      "claimedAt": null,
+      "pickedUpAt": null,
+      "requests": []
+    },
+    {
+      "id": "2c986b2d-b470-4e8f-a8f4-29963e287014",
+      "title": "Sourdough loaf",
+      "category": "BAKERY",
+      "quantityText": "1 loaf",
+      "notes": "Unopened",
+      "itemExpiry": "2026-11-14",
+      "pickupDeadline": 1794577711225,
+      "areaLabel": "Fresh Mart",
+      "claimMode": "approval",
+      "status": "available",
+      "createdAt": 1794556111228,
+      "donor": {
+        "name": "Fresh Mart",
+        "isShop": true,
+        "openingHours": "8am–9pm"
+      },
+      "approxLat": 12.97,
+      "approxLon": 77.59,
+      "isMine": true,
+      "claimedByMe": false,
+      "pickup": {
+        "lat": 12.9716,
+        "lon": 77.5946,
+        "address": "5 Market St",
+        "instructions": "Ask at the till",
+        "code": null
+      },
+      "clientProductId": 42,
+      "claimedBy": null,
+      "claimedAt": null,
+      "pickedUpAt": null,
+      "requests": [
+        {
+          "id": "3037e1bb-61ca-4ce7-a406-6d4e7d476722",
+          "name": "Ravi",
+          "message": "Can collect at 6",
+          "status": "pending",
+          "createdAt": 1794556111245
+        }
+      ]
+    }
+  ]
+}

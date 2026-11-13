@@ -1,0 +1,55 @@
+{
+  "listings": [
+    {
+      "id": "2c986b2d-b470-4e8f-a8f4-29963e287014",
+      "title": "Sourdough loaf",
+      "category": "BAKERY",
+      "quantityText": "1 loaf",
+      "notes": "Unopened",
+      "itemExpiry": "2026-11-14",
+      "pickupDeadline": 1794577711225,
+      "areaLabel": "Fresh Mart",
+      "claimMode": "approval",
+      "status": "available",
+      "createdAt": 1794556111228,
+      "donor": {
+        "name": "Fresh Mart",
+        "isShop": true,
+        "openingHours": "8am–9pm"
+      },
+      "approxLat": 12.97,
+      "approxLon": 77.59,
+      "isMine": false,
+      "claimedByMe": false,
+      "distanceKm": 0.5,
+      "distanceLabel": "under 1 km",
+      "myRequestStatus": null
+    },
+    {
+      "id": "519d5dcf-ba43-45c8-bd49-e659be80d0d2",
+      "title": "Bananas",
+      "category": "OTHER",
+      "quantityText": "1 kg",
+      "notes": "",
+      "itemExpiry": null,
+      "pickupDeadline": 1794581311225,
+      "areaLabel": "",
+      "claimMode": "direct",
+      "status": "available",
+      "createdAt": 1794556111235,
+      "donor": {
+        "name": "Fresh Mart",
+        "isShop": true,
+        "openingHours": "8am–9pm"
+      },
+      "approxLat": 12.97,
+      "approxLon": 77.59,
+      "isMine": false,
+      "claimedByMe": false,
+      "distanceKm": 0.5,
+      "distanceLabel": "under 1 km"
+    }
+  ],
+  "radiusKm": 5,
+  "sort": "distance"
+}

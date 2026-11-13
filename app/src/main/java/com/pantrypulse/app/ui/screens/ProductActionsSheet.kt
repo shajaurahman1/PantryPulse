@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.AddShoppingCart
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.VolunteerActivism
@@ -37,6 +38,7 @@ fun ProductActionsSheet(
     onEdit: () -> Unit,
     onRescue: () -> Unit,
     onRecipes: () -> Unit,
+    onGiveAway: () -> Unit,
 ) {
     val c = PulseTheme.colors
     val isFood = product.category.kind == ItemKind.FOOD
@@ -50,7 +52,11 @@ fun ProductActionsSheet(
             ActionRow(Icons.Outlined.AddShoppingCart, "Add to shopping list", { onDismiss(); vm.addToShopping(product) })
             if (isFood) {
                 ActionRow(Icons.Outlined.RestaurantMenu, "Find a recipe", onRecipes, "Ideas that use ${product.name}")
-                ActionRow(Icons.Outlined.VolunteerActivism, "Donate or share", onRescue, "Food banks, community fridges & neighbours", tint = c.accent)
+                ActionRow(Icons.Outlined.VolunteerActivism, "Give away nearby", onGiveAway, "Let someone close by claim it for free", tint = c.accent)
+                ActionRow(Icons.Outlined.Map, "Food banks & community fridges", onRescue, "Drop-off points on the map")
+            }
+            if (product.category.kind == ItemKind.COSMETICS) {
+                ActionRow(Icons.Outlined.VolunteerActivism, "Give away nearby", onGiveAway, "Let someone close by claim it for free", tint = c.accent)
             }
             ActionRow(Icons.Outlined.Edit, "Edit details", onEdit)
             ActionRow(Icons.Outlined.WarningAmber, "Threw it away", { onDismiss(); vm.markWasted(product) }, "Logged so you can track waste")

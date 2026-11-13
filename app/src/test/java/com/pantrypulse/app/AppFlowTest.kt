@@ -120,7 +120,7 @@ class AppFlowTest {
         // --- Item actions sheet --------------------------------------------------------
         rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("product_Paneer"))
         rule.onNodeWithTag("product_Paneer").performClick()
-        waitFor("Donate or share")
+        waitFor("Give away nearby")
         shot("05_item_actions")
         rule.onNodeWithTag("action_Mark as finished").performClick()
         waitFor("Paneer is finished.")

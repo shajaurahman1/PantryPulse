@@ -87,6 +87,7 @@ fun HomeScreen(
     onRescue: (Long?) -> Unit,
     onRecipesFor: (String) -> Unit,
     onAdd: () -> Unit,
+    onGiveAway: (Long) -> Unit,
 ) {
     val c = PulseTheme.colors
     val products by vm.products.collectAsState()
@@ -214,7 +215,7 @@ fun HomeScreen(
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text("Going away or won't use it?", style = MaterialTheme.typography.titleSmall)
-                            Text("Find food banks & community fridges nearby", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            Text("Give it to someone nearby, or find food banks & community fridges", style = MaterialTheme.typography.bodySmall, color = c.muted)
                         }
                     }
                 }
@@ -269,6 +270,7 @@ fun HomeScreen(
             onEdit = { selected = null; onEdit(p.id) },
             onRescue = { selected = null; onRescue(p.id) },
             onRecipes = { selected = null; onRecipesFor(p.name) },
+            onGiveAway = { selected = null; onGiveAway(p.id) },
         )
     }
 }
