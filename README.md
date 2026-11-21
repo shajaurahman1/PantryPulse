@@ -22,12 +22,12 @@ Every push to `main` runs the tests, rebuilds both files and refreshes the lates
 | # | Feature | How it works |
 |---|---------|--------------|
 | 1 | Add products with expiry dates | Manual entry with date picker and quick chips (+3 days, +1 week, typical shelf life for the category). |
-| 2 | Expiry notifications | A daily check (~9 am, WorkManager) notifies about items expiring within your chosen window (1–14 days). "Check now" in Profile. |
+| 2 | Expiry notifications | A daily check at the time you pick (7 am / 9 am / 12 pm / 6 pm, WorkManager) notifies about items expiring within your chosen window (1–14 days). Profile has "Send a test notification", "Check now", and a shortcut to the phone's notification settings if they're blocked. |
 | 3 | Available products | Home screen: "N things want using up before Friday", weekly pulse chart, Food / Cosmetics / Medicine tabs, ticket cards with days left. |
 | 4 | Profile login | Email + password accounts (PBKDF2-hashed, never stored in plain text), quick profile picker on the sign-in screen. |
 | 5 | Recipe suggestions | Built-in recipes ranked by how many expiring items they rescue, plus online ideas by ingredient from TheMealDB. |
 | 6 | Expiry date from photo | Live camera OCR (ML Kit, on-device) reads "EXP 12/08/26", "BEST BEFORE 12 AUG 2026", "USE BY 2026-08-12", "08/27"… and prefers the expiry date over the manufacture date. Gallery photos work too. |
-| 7 | Barcode scanning | ML Kit barcode scanner; product name, brand, category and photo filled from Open Food Facts (or your own history). |
+| 7 | Barcode & QR scanning | ML Kit scanner for barcodes and QR / Data Matrix codes (GS1 links and element strings are unpacked to the product number); product name, brand, category and photo filled from Open Food Facts (or your own history). |
 | 8 | Storage locations | Fridge, Freezer, Pantry, Counter, Cupboard, Bathroom, Medicine cabinet — plus your own. Filter chips with counts. |
 | 9 | Multi-user households | Family, Roommates or Office breakroom households with invite codes, member profiles, household switching. Everyone shares one pantry and one shopping list. |
 | 10 | Receipt scanning | Photo of a paper receipt, screenshot of a digital one, or pasted text → items with quantities and suggested expiry dates to review and add. |
@@ -35,6 +35,8 @@ Every push to `main` runs the tests, rebuilds both files and refreshes the lates
 | 12 | One-tap shopping list | When an item hits zero or is marked finished, a snackbar offers **Add to list** (or turn on auto-add). Bought items move back to the pantry in one tap. |
 | 13 | **Giveaways (peer-to-peer)** | "Give away nearby" on any food item: approximate location, public area name, private exact address and instructions, pickup deadline, notes (unopened, sealed…), and **Allow direct claim (first-come, first-served)** or **Require my approval**. A Nearby feed filters by 2 / 5 / 10 / 25 km and sorts by distance or urgency. Only one person can ever claim an item (atomic database update); approving one request closes the rest. Status: available → reserved → picked up (or expired); donors can release no-shows. Addresses stay hidden until a claim is confirmed. |
 | 14 | **Shop accounts** | Shopkeepers sign up as a shop (name, address, opening hours) and get a dashboard: live / requests / booked / rescued counts, post several surplus items in one go, approve requests and confirm pickups. |
+| 15 | **Nearby giveaway alerts** | Profile → Community → *Nearby giveaway alerts*. Choose 2 / 5 / 10 / 25 km. When someone posts a giveaway (or a shop posts a batch) within your radius you get a notification, and tapping it opens Giveaways. Only your approximate location (rounded to ~1 km) is sent to the server; alerts show a rounded distance, never the exact pickup point. Off by default. |
+| 16 | **Giveaway shortcut button** | A floating button on every main screen opens Giveaways in one tap. When free food is available close by it expands to "N free nearby · about X km", and the feed opens nearest-first. |
 
 ## Backend
 
@@ -63,3 +65,4 @@ Release signing reads `PANTRYPULSE_KEYSTORE`, `PANTRYPULSE_KEYSTORE_PASSWORD`, `
 Kotlin · Jetpack Compose (Material 3) · Room · DataStore · WorkManager · CameraX · ML Kit (barcode + text recognition, bundled models) · Coil · osmdroid. Min SDK 26, target SDK 35.
 
 Design: warm paper `#F2EFE9`, ink `#17140F`, pulse orange `#FF5A2C`; type in Bricolage Grotesque and DM Mono (both SIL Open Font License 1.1, see `app/FONTS_LICENSE.txt`).
+F2EFE9`, ink `#17140F`, pulse orange `#FF5A2C`; type in Bricolage Grotesque and DM Mono (both SIL Open Font License 1.1, see `app/FONTS_LICENSE.txt`).
