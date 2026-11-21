@@ -119,4 +119,3 @@ fun BarcodeScanScreen(onResult: (String) -> Unit, onClose: () -> Unit) {
         }
     }
 }
-
