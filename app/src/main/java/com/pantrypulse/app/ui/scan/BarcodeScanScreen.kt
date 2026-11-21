@@ -38,7 +38,6 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.pantrypulse.app.domain.ProductCode
 import com.pantrypulse.app.ui.components.PrimaryButton
 import com.pantrypulse.app.ui.components.PulseCard
 import com.pantrypulse.app.ui.components.PulseTextField
@@ -52,14 +51,12 @@ fun BarcodeScanScreen(onResult: (String) -> Unit, onClose: () -> Unit) {
     var camera by remember { mutableStateOf<Camera?>(null) }
     var torch by remember { mutableStateOf(false) }
     var manual by remember { mutableStateOf("") }
-    var hint by remember { mutableStateOf<String?>(null) }
     val delivered = remember { AtomicBoolean(false) }
     val scanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder().setBarcodeFormats(
                 Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8, Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E,
                 Barcode.FORMAT_CODE_128, Barcode.FORMAT_CODE_39, Barcode.FORMAT_ITF,
-                Barcode.FORMAT_QR_CODE, Barcode.FORMAT_DATA_MATRIX,
             ).build()
         )
     }
@@ -70,23 +67,14 @@ fun BarcodeScanScreen(onResult: (String) -> Unit, onClose: () -> Unit) {
             if (media == null || delivered.get()) { proxy.close(); return@Analyzer }
             scanner.process(InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees))
                 .addOnSuccessListener { codes ->
-                    // Linear barcodes hold the number directly; QR / Data Matrix hold a link or GS1 string
-                    // that has to be unpacked into the product number.
-                    val value = codes.firstNotNullOfOrNull { code ->
-                        val raw = code.rawValue?.takeIf { it.isNotBlank() } ?: return@firstNotNullOfOrNull null
-                        if (code.format == Barcode.FORMAT_QR_CODE || code.format == Barcode.FORMAT_DATA_MATRIX) ProductCode.fromQr(raw) else raw
-                    }
-                    if (value != null) {
-                        if (delivered.compareAndSet(false, true)) onResult(value)
-                    } else {
-                        hint = if (codes.isNotEmpty()) "That QR code has no product number. Try the barcode on the pack." else null
-                    }
+                    val value = codes.firstNotNullOfOrNull { it.rawValue?.takeIf { v -> v.isNotBlank() } }
+                    if (value != null && delivered.compareAndSet(false, true)) onResult(value)
                 }
                 .addOnCompleteListener { proxy.close() }
         }
     }
 
-    CameraPermissionGate("PantryPulse uses the camera to read product barcodes and QR codes. Nothing is recorded or uploaded.") {
+    CameraPermissionGate("PantryPulse uses the camera to read product barcodes. Nothing is recorded or uploaded.") {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
             CameraPreview(Modifier.fillMaxSize(), analyzer = analyzer, onCamera = { camera = it })
             // Viewfinder
@@ -106,8 +94,8 @@ fun BarcodeScanScreen(onResult: (String) -> Unit, onClose: () -> Unit) {
             }
             Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp)) {
                 PulseCard(padding = 16.dp) {
-                    Text("Point at the barcode or QR code", style = MaterialTheme.typography.titleMedium)
-                    Text(hint ?: "It scans automatically. Or type the number:", style = MaterialTheme.typography.bodySmall, color = if (hint != null) c.accent else c.muted)
+                    Text("Point at the barcode", style = MaterialTheme.typography.titleMedium)
+                    Text("It scans automatically. Or type the number:", style = MaterialTheme.typography.bodySmall, color = c.muted)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         PulseTextField(manual, { manual = it.filter(Char::isDigit) }, "Barcode number", Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
