@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MyLocation
@@ -24,10 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.pantrypulse.app.data.community.ShopProfile
 import com.pantrypulse.app.ui.MainViewModel
 import com.pantrypulse.app.ui.components.ActionRow
 import com.pantrypulse.app.ui.components.EyebrowText
+import com.pantrypulse.app.ui.components.PillChip
 import com.pantrypulse.app.ui.components.PrimaryButton
 import com.pantrypulse.app.ui.components.PulseCard
 import com.pantrypulse.app.ui.components.PulseTextField
@@ -81,6 +84,38 @@ fun CommunityProfileCard(vm: MainViewModel, cvm: CommunityViewModel, onOpenGivea
                 else permission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
             }, icon = Icons.Outlined.MyLocation)
         }
+        if (u?.isShop != true && !isShop) {
+            val alertsOn = (u?.notifyRadiusKm ?: 0.0) > 0.0
+            var busy by remember { mutableStateOf(false) }
+            fun apply(km: Double) {
+                busy = true
+                cvm.setAlerts(context, km) { err ->
+                    busy = false
+                    vm.message(err ?: if (km > 0) "You'll be alerted to giveaways within ${km.toInt()} km." else "Nearby giveaway alerts are off.")
+                }
+            }
+            val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+                if (r.values.any { it }) apply(5.0) else vm.message("Location is needed to alert you about giveaways near you.")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Nearby giveaway alerts", style = MaterialTheme.typography.titleSmall)
+                    Text("Get a notification when someone close to you gives food away. Only your approximate location (~1 km) is shared.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                }
+                Switch(alertsOn, { on ->
+                    if (busy) return@Switch
+                    if (!on) apply(0.0)
+                    else if (cvm.container.location.hasPermission(context)) apply(5.0)
+                    else askLocation.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
+                }, colors = SwitchDefaults.colors(checkedThumbColor = c.card, checkedTrackColor = c.accent, uncheckedTrackColor = c.paper))
+            }
+            if (alertsOn) {
+                Text("Alert me within", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(2.0, 5.0, 10.0, 25.0).forEach { km -> PillChip("${km.toInt()} km", u?.notifyRadiusKm == km, { if (!busy) apply(km) }) }
+                }
+            }
+        }
         val changed = isShop != (u?.isShop == true) || (isShop && (name != u?.shopName.orEmpty() || address != u?.shopAddress.orEmpty() ||
             hours != u?.openingHours.orEmpty() || lat != u?.lat || lon != u?.lon))
         if (changed) {
@@ -94,3 +129,4 @@ fun CommunityProfileCard(vm: MainViewModel, cvm: CommunityViewModel, onOpenGivea
         }
     }
 }
+
