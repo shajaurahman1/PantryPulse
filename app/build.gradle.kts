@@ -16,7 +16,7 @@ android {
         versionCode = 2
         versionName = "1.1.0"
         // Community backend (backend/ folder, deployed on Vercel).
-        buildConfigField("String", "COMMUNITY_API_URL", "\"https://pantrypulse-api.vercel.app\"")
+        buildConfigField("String", "COMMUNITY_API_URL", "\"https://pantry-pulse-backend.vercel.app\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         // Real phones are ARM; dropping emulator-only x86 builds of the ML Kit libraries
