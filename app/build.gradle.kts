@@ -13,10 +13,11 @@ android {
         applicationId = "com.pantrypulse.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
+        // CI sets GITHUB_RUN_NUMBER so every published build has a higher versionCode (needed to update an installed app).
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 2).coerceAtLeast(2)
         versionName = "1.1.0"
         // Community backend (backend/ folder, deployed on Vercel).
-        buildConfigField("String", "COMMUNITY_API_URL", "\"https://pantry-pulse-backend.vercel.app\"")
+        buildConfigField("String", "COMMUNITY_API_URL", "\"https://pantrypulse-api.vercel.app\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         // Real phones are ARM; dropping emulator-only x86 builds of the ML Kit libraries
