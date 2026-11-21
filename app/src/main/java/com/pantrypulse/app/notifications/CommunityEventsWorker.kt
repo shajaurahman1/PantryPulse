@@ -27,6 +27,12 @@ class CommunityEventsWorker(context: Context, params: WorkerParameters) : Corout
         val container = (applicationContext as PantryPulseApp).container
         if (!container.community.current().connected) return Result.success()
         return try {
+            // Alerts on: keep the server's approximate location fresh so "nearest" stays accurate as you move.
+            if (container.community.current().user?.notifyRadiusKm?.let { it > 0.0 } == true &&
+                container.location.hasPermission(applicationContext)) {
+                runCatching { container.location.current(applicationContext) }.getOrNull()
+                    ?.let { runCatching { container.community.refreshAlertLocation(it.lat, it.lon) } }
+            }
             notify(applicationContext, container.community.newEvents())
             Result.success()
         } catch (e: Exception) {
@@ -40,7 +46,7 @@ class CommunityEventsWorker(context: Context, params: WorkerParameters) : Corout
 
         fun createChannel(context: Context) {
             val channel = NotificationChannel(CHANNEL_ID, "Giveaways", NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = "Claims, requests and pickups for your giveaways" }
+                .apply { description = "New giveaways near you, plus claims, requests and pickups for your giveaways" }
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
 
@@ -58,7 +64,11 @@ class CommunityEventsWorker(context: Context, params: WorkerParameters) : Corout
                 putExtra(ExpiryNotifier.EXTRA_OPEN, "giveaways")
             }
             val pending = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            val title = if (events.size == 1) "Giveaway update" else "${events.size} giveaway updates"
+            val title = when {
+                events.all { it.type == "nearby" } -> if (events.size == 1) "Free food nearby" else "${events.size} giveaways near you"
+                events.size == 1 -> "Giveaway update"
+                else -> "${events.size} giveaway updates"
+            }
             val body = events.takeLast(5).joinToString("\n") { it.message }
             val n = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
