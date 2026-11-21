@@ -65,4 +65,3 @@ Release signing reads `PANTRYPULSE_KEYSTORE`, `PANTRYPULSE_KEYSTORE_PASSWORD`, `
 Kotlin · Jetpack Compose (Material 3) · Room · DataStore · WorkManager · CameraX · ML Kit (barcode + text recognition, bundled models) · Coil · osmdroid. Min SDK 26, target SDK 35.
 
 Design: warm paper `#F2EFE9`, ink `#17140F`, pulse orange `#FF5A2C`; type in Bricolage Grotesque and DM Mono (both SIL Open Font License 1.1, see `app/FONTS_LICENSE.txt`).
-F2EFE9`, ink `#17140F`, pulse orange `#FF5A2C`; type in Bricolage Grotesque and DM Mono (both SIL Open Font License 1.1, see `app/FONTS_LICENSE.txt`).
