@@ -70,6 +70,7 @@ class CommunityViewModel(val container: AppContainer) : ViewModel() {
                 loading = false
             } else {
                 location = here
+                runCatching { repo.refreshAlertLocation(here.lat, here.lon) }
                 loadNearby()
             }
         }
@@ -84,7 +85,8 @@ class CommunityViewModel(val container: AppContainer) : ViewModel() {
         loading = true
         error = null
         runCatching { repo.nearby(here.lat, here.lon, radiusKm, sortByUrgency) }
-            .onSuccess { nearby = it }
+            // Closest first unless the person chose to sort by urgency, so nearby food is always prioritised.
+            .onSuccess { list -> nearby = if (sortByUrgency) list else list.sortedBy { it.distanceKm ?: Double.MAX_VALUE } }
             .onFailure { error = friendly(it) }
         loading = false
     }
@@ -142,5 +144,27 @@ class CommunityViewModel(val container: AppContainer) : ViewModel() {
         viewModelScope.launch { onDone(runCatching { repo.updateProfile(isShop, shop) }.exceptionOrNull()?.let(::friendly)) }
     }
 
+    /** Refreshes the floating button's nearby count without ever prompting for location permission. */
+    fun refreshNearbyBadge(context: Context) {
+        viewModelScope.launch {
+            if (!state.value.connected || !container.location.hasPermission(context)) return@launch
+            if (location == null) container.location.current(context)?.let { location = it }
+            loadNearby()
+        }
+    }
+
+    /** Radius 0 turns alerts off. Turning them on needs a location so the server knows who is nearby. */
+    fun setAlerts(context: Context, radiusKm: Double, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val here = if (radiusKm > 0) currentLocation(context) else null
+            if (radiusKm > 0 && here == null) {
+                onDone("Couldn't get your location. Turn on location services and try again.")
+                return@launch
+            }
+            onDone(runCatching { repo.setAlerts(radiusKm, here?.lat, here?.lon) }.exceptionOrNull()?.let(::friendly))
+        }
+    }
+
     suspend fun currentLocation(context: Context): LatLon? = location ?: container.location.current(context)?.also { location = it }
 }
+
