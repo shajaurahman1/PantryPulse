@@ -108,8 +108,8 @@ fun ProfileScreen(
     val session by vm.session.collectAsState()
     val counts by vm.statusCounts.collectAsState()
     var dialog by remember { mutableStateOf<ProfileDialog?>(null) }
-    var canNotify by remember { mutableStateOf(ExpiryNotifier.canNotify(context)) }
-    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { canNotify = it }
+    var canNotify by remember { mutableStateOf(ExpiryNotifier.enabledInSystem(context)) }
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { canNotify = ExpiryNotifier.enabledInSystem(context) }
 
     fun run(block: suspend () -> Unit) = scope.launch(Dispatchers.Main) {
         try { block(); dialog = null } catch (e: Exception) { vm.message(e.message ?: "Something went wrong") }
@@ -226,12 +226,25 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Daily reminder", style = MaterialTheme.typography.titleSmall)
-                        Text("Around 9am when something is close to expiring", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                        Text("Around ${ExpiryCheckWorker.hourLabel(s?.reminderHour ?: 9)} when something is close to expiring", style = MaterialTheme.typography.bodySmall, color = c.muted)
                     }
                     Switch(s?.notificationsEnabled == true, { vm.setNotifications(it) }, colors = pulseSwitch())
                 }
-                if (!canNotify && Build.VERSION.SDK_INT >= 33) {
-                    SecondaryButton("Allow notifications", { notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }, icon = Icons.Outlined.NotificationsActive)
+                if (!canNotify) {
+                    Text("Notifications are turned off for PantryPulse, so reminders can't appear on your phone.", style = MaterialTheme.typography.bodySmall, color = c.accent)
+                    if (Build.VERSION.SDK_INT >= 33 && !ExpiryNotifier.canNotify(context)) {
+                        SecondaryButton("Allow notifications", { notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }, icon = Icons.Outlined.NotificationsActive)
+                    }
+                    SecondaryButton("Open notification settings", { ExpiryNotifier.openSettings(context) })
+                }
+                Text("Remind me at", style = MaterialTheme.typography.titleSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(7, 9, 12, 18).forEach { hr ->
+                        PillChip(ExpiryCheckWorker.hourLabel(hr), (s?.reminderHour ?: 9) == hr, {
+                            vm.setReminderHour(hr)
+                            ExpiryCheckWorker.schedule(context, hr, replace = true)
+                        })
+                    }
                 }
                 val days = s?.warningDays ?: 3
                 Text("Warn me $days day${if (days > 1) "s" else ""} before", style = MaterialTheme.typography.titleSmall)
@@ -239,6 +252,10 @@ fun ProfileScreen(
                     value = days.toFloat(), onValueChange = { vm.setWarningDays(it.toInt()) }, valueRange = 1f..14f, steps = 12,
                     colors = SliderDefaults.colors(thumbColor = c.accent, activeTrackColor = c.accent, inactiveTrackColor = c.peach, activeTickColor = c.ink, inactiveTickColor = c.accent),
                 )
+                SecondaryButton("Send a test notification", {
+                    canNotify = ExpiryNotifier.enabledInSystem(context)
+                    vm.message(if (ExpiryNotifier.showTest(context)) "Test sent — check your notification shade." else "Notifications are blocked. Tap “Open notification settings” and turn them on.")
+                })
                 SecondaryButton("Check now", { ExpiryCheckWorker.runNow(context); vm.message("Checking your pantry… you'll get a notification if anything is close to expiring.") })
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {

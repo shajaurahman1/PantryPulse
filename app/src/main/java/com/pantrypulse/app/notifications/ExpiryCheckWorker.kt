@@ -30,15 +30,20 @@ class ExpiryCheckWorker(context: Context, params: WorkerParameters) : CoroutineW
         private const val DAILY = "pantrypulse_daily_expiry_check"
         private const val NOW = "pantrypulse_expiry_check_now"
 
-        /** Schedules the daily check for about 9am local time. */
-        fun schedule(context: Context) {
+        /** "9 am", "12 pm", "6 pm". */
+        fun hourLabel(hour: Int) = "${if (hour % 12 == 0) 12 else hour % 12} ${if (hour < 12) "am" else "pm"}"
+
+        /** Schedules the daily check for about [hour]:00 local time. [replace] restarts it when the time is changed. */
+        fun schedule(context: Context, hour: Int = 9, replace: Boolean = false) {
             val now = LocalDateTime.now()
-            var next = now.withHour(9).withMinute(0).withSecond(0)
+            var next = now.withHour(hour.coerceIn(0, 23)).withMinute(0).withSecond(0).withNano(0)
             if (!next.isAfter(now)) next = next.plusDays(1)
             val request = PeriodicWorkRequestBuilder<ExpiryCheckWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(Duration.between(now, next).toMinutes(), TimeUnit.MINUTES)
                 .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(DAILY, ExistingPeriodicWorkPolicy.KEEP, request)
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                DAILY, if (replace) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP, request,
+            )
         }
 
         fun runNow(context: Context) {

@@ -150,6 +150,7 @@ class MainViewModel(val container: AppContainer) : ViewModel() {
 
     fun setWarningDays(days: Int) = launchSafe { container.session.setWarningDays(days) }
     fun setNotifications(enabled: Boolean) = launchSafe { container.session.setNotificationsEnabled(enabled) }
+    fun setReminderHour(hour: Int) = launchSafe { container.session.setReminderHour(hour) }
     fun setAutoAdd(enabled: Boolean) = launchSafe { container.session.setAutoAddFinished(enabled) }
 
     fun switchHousehold(id: Long) = launchSafe { container.households.switchTo(id) }

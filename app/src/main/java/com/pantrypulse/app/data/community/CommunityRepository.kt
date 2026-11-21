@@ -67,6 +67,7 @@ class CommunityRepository(
             put("shopName", user.shopName ?: JSONObject.NULL); put("shopAddress", user.shopAddress ?: JSONObject.NULL)
             put("openingHours", user.openingHours ?: JSONObject.NULL)
             put("lat", user.lat ?: JSONObject.NULL); put("lon", user.lon ?: JSONObject.NULL)
+            put("notifyRadiusKm", user.notifyRadiusKm)
         }
         context.communityStore.edit { p ->
             token?.let { p[tokenKey(email)] = it }
@@ -91,6 +92,26 @@ class CommunityRepository(
         val user = api.updateProfile(token(), isShop, shop)
         saveUser(s.email!!, user)
         return user
+    }
+
+    /** Location is rounded to ~1 km before it leaves the phone; the server never needs more. */
+    private fun coarse(v: Double) = Math.round(v * 100) / 100.0
+
+    /** Turns nearby-giveaway alerts on or off (radiusKm = 0). Shop accounts keep their shop location. */
+    suspend fun setAlerts(radiusKm: Double, lat: Double?, lon: Double?): CommunityUser {
+        val s = current()
+        val user = api.updateAlerts(token(), radiusKm, if (s.isShop) null else lat?.let(::coarse), if (s.isShop) null else lon?.let(::coarse))
+        saveUser(s.email!!, user)
+        return user
+    }
+
+    /** Keeps the server's approximate location current while alerts are on. Called from the background worker. */
+    suspend fun refreshAlertLocation(lat: Double, lon: Double) {
+        val s = current()
+        val u = s.user ?: return
+        if (u.isShop || u.notifyRadiusKm <= 0.0) return
+        if (u.lat == coarse(lat) && u.lon == coarse(lon)) return
+        setAlerts(u.notifyRadiusKm, lat, lon)
     }
 
     suspend fun createListing(listing: NewListing) = api.createListing(token(), listing)

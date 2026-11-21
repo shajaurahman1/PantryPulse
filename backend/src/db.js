@@ -18,9 +18,18 @@ export function db() {
 
 export async function ensureSchema() {
   if (!ready) {
-    ready = db().executeMultiple(schema).catch((e) => { ready = undefined; throw e; });
+    ready = db().executeMultiple(schema).then(migrate).catch((e) => { ready = undefined; throw e; });
   }
   return ready;
+}
+
+/** Columns added after the first release; CREATE TABLE IF NOT EXISTS won't add them to an existing table. */
+async function migrate() {
+  try {
+    await db().execute('ALTER TABLE users ADD COLUMN notify_radius_km REAL NOT NULL DEFAULT 0');
+  } catch (e) {
+    if (!/duplicate column/i.test(String(e.message))) throw e;
+  }
 }
 
 /** Test helper: point the module at a different database. */

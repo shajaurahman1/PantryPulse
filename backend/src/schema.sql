@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   opening_hours TEXT,
   lat           REAL,
   lon           REAL,
+  notify_radius_km REAL NOT NULL DEFAULT 0,  -- 0 = no nearby-giveaway alerts; lat/lon is then the person's approximate location
   created_at    INTEGER NOT NULL
 );
 

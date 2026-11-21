@@ -34,6 +34,36 @@ object ExpiryNotifier {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
+    /** True only when the system will really show our notifications (permission granted and not switched off in settings). */
+    fun enabledInSystem(context: Context): Boolean = canNotify(context) && NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+    /** Opens this app's notification page in the phone's settings. */
+    fun openSettings(context: Context) {
+        val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+    }
+
+    /** Sends a sample notification so the person can confirm reminders reach their phone. Returns false if blocked. */
+    fun showTest(context: Context): Boolean {
+        if (!enabledInSystem(context)) return false
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN, "pantry")
+        }
+        val pending = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(0xFF1F7A57.toInt())
+            .setContentTitle("Expiry reminders are on ✓")
+            .setContentText("You'll be told here when food in your pantry is about to expire.")
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .build()
+        return try { NotificationManagerCompat.from(context).notify(4203, notification); true } catch (_: SecurityException) { false }
+    }
+
     /** Builds the title and body; split out so it can be unit tested. */
     fun content(items: List<ProductEntity>): Pair<String, String> {
         val expired = items.count { (Expiry.daysLeft(it.expiryDate) ?: 1) < 0 }

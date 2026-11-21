@@ -50,6 +50,15 @@ class FakeCommunityApi : CommunityApi {
         return me!!
     }
 
+    var alertRadiusKm = 0.0
+    var alertLat: Double? = null
+    override suspend fun updateAlerts(token: String, radiusKm: Double, lat: Double?, lon: Double?): CommunityUser {
+        alertRadiusKm = radiusKm
+        if (lat != null) alertLat = lat
+        me = me!!.copy(notifyRadiusKm = radiusKm, lat = lat ?: me!!.lat, lon = lon ?: me!!.lon)
+        return me!!
+    }
+
     private fun fromDraft(d: NewListing) = Listing(
         UUID.randomUUID().toString(), d.title, d.category, d.quantityText, d.notes, d.itemExpiry, d.pickupDeadline, d.areaLabel,
         d.claimMode, ListingStatus.AVAILABLE, me!!.shopName ?: me!!.name, me!!.isShop, me!!.openingHours, d.lat!!, d.lon!!, null, null,

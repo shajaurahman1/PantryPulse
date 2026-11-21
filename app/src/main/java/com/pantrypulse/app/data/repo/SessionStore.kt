@@ -21,6 +21,8 @@ data class Session(
     val warningDays: Int,
     val notificationsEnabled: Boolean,
     val autoAddFinishedToList: Boolean,
+    /** Local hour (0-23) for the daily expiry reminder. */
+    val reminderHour: Int = 9,
 ) {
     val isSignedIn: Boolean get() = userId != null && householdId != null
 }
@@ -32,6 +34,7 @@ class SessionStore(private val context: Context) {
         val warningDays = intPreferencesKey("warning_days")
         val notifications = booleanPreferencesKey("notifications_enabled")
         val autoAdd = booleanPreferencesKey("auto_add_finished")
+        val reminderHour = intPreferencesKey("reminder_hour")
     }
 
     val session: Flow<Session> = context.dataStore.data.map { p ->
@@ -41,6 +44,7 @@ class SessionStore(private val context: Context) {
             warningDays = p[Keys.warningDays] ?: Expiry.DEFAULT_WARNING_DAYS,
             notificationsEnabled = p[Keys.notifications] ?: true,
             autoAddFinishedToList = p[Keys.autoAdd] ?: false,
+            reminderHour = p[Keys.reminderHour] ?: 9,
         )
     }
 
@@ -70,6 +74,10 @@ class SessionStore(private val context: Context) {
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[Keys.notifications] = enabled }
+    }
+
+    suspend fun setReminderHour(hour: Int) {
+        context.dataStore.edit { it[Keys.reminderHour] = hour.coerceIn(5, 22) }
     }
 
     suspend fun setAutoAddFinished(enabled: Boolean) {

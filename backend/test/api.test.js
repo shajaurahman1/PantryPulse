@@ -264,3 +264,38 @@ test('validation and admin access', async () => {
   assert.ok(Array.isArray(viaRewrite.body.listings));
   assert.equal((await call('GET', '/api?__route=/health')).body.ok, true);
 });
+
+test('people who opted in are alerted to new giveaways inside their own radius', async () => {
+  const donor = await newUser();
+  const close = await newUser();
+  const far = await newUser();
+  const off = await newUser();
+
+  // Close: 2 km away, 5 km alerts. Far: 8 km away, 5 km alerts. Off: 1 km away but alerts disabled.
+  let r = await call('PATCH', '/me', { token: close.token, body: { ...near(2), notifyRadiusKm: 5 } });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.user.notifyRadiusKm, 5);
+  await call('PATCH', '/me', { token: far.token, body: { ...near(8), notifyRadiusKm: 5 } });
+  await call('PATCH', '/me', { token: off.token, body: { ...near(1) } });
+
+  const listing = await newListing(donor.token, { title: 'Sourdough loaf' });
+
+  const got = await call('GET', '/events?after=0', { token: close.token });
+  const nearbyEvents = got.body.events.filter((e) => e.type === 'nearby');
+  assert.equal(nearbyEvents.length, 1);
+  assert.equal(nearbyEvents[0].listingId, listing.id);
+  assert.match(nearbyEvents[0].message, /Sourdough loaf/);
+  assert.doesNotMatch(nearbyEvents[0].message, /Residency|12\.97|77\.59/, 'exact pickup details must not leak');
+
+  for (const other of [far, off, donor]) {
+    const e = await call('GET', '/events?after=0', { token: other.token });
+    assert.equal(e.body.events.filter((x) => x.type === 'nearby').length, 0);
+  }
+});
+
+test('notifyRadiusKm is validated', async () => {
+  const u = await newUser();
+  const r = await call('PATCH', '/me', { token: u.token, body: { notifyRadiusKm: 500 } });
+  assert.equal(r.status, 400);
+  assert.equal(r.body.error, 'invalid_radius');
+});

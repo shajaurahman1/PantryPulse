@@ -71,6 +71,7 @@ import com.pantrypulse.app.notifications.ExpiryNotifier
 import kotlinx.coroutines.launch
 import com.pantrypulse.app.ui.community.CommunityProfileCard
 import com.pantrypulse.app.ui.community.CommunityViewModel
+import com.pantrypulse.app.ui.community.GiveawayFab
 import com.pantrypulse.app.ui.community.GiveAwayFormScreen
 import com.pantrypulse.app.ui.community.GiveawaysScreen
 import com.pantrypulse.app.ui.community.ShopPostScreen
@@ -155,6 +156,14 @@ private fun MainShell(vm: MainViewModel) {
     val currentRoute = backStack?.destination?.route
     val showBar = tabs.any { it.route == currentRoute }
     var showAddSheet by remember { mutableStateOf(false) }
+    // Shared with the Giveaways screen so the floating button and the feed show the same data.
+    val giveawayVm = appViewModel(owner = activityOwner) { CommunityViewModel(it) }
+    val community by giveawayVm.state.collectAsState()
+
+    // Keep "N free nearby" fresh whenever the person moves between main screens.
+    LaunchedEffect(currentRoute, community.connected) {
+        if (showBar) giveawayVm.refreshNearbyBadge(context)
+    }
 
     LaunchedEffect(Unit) {
         vm.messages.collect { msg ->
@@ -202,6 +211,16 @@ private fun MainShell(vm: MainViewModel) {
                     onAdd = { showAddSheet = true },
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
+                if (currentRoute != Routes.GIVEAWAYS) {
+                    GiveawayFab(
+                        giveawayVm,
+                        onClick = {
+                            giveawayVm.setUrgency(false) // closest first
+                            nav.navigate(Routes.GIVEAWAYS) { popUpTo(Routes.HOME) { saveState = true }; launchSingleTop = true; restoreState = true }
+                        },
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 104.dp),
+                    )
+                }
             }
         }
     }

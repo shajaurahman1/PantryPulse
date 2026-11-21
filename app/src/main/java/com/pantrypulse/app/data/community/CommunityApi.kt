@@ -22,6 +22,8 @@ interface CommunityApi {
     suspend fun connect(email: String, password: String, name: String, shop: ShopProfile?): AuthResult
     suspend fun me(token: String): CommunityUser
     suspend fun updateProfile(token: String, isShop: Boolean, shop: ShopProfile?, name: String? = null): CommunityUser
+    /** Turns nearby-giveaway alerts on (radiusKm > 0) or off (0), sharing an approximate location while on. */
+    suspend fun updateAlerts(token: String, radiusKm: Double, lat: Double?, lon: Double?): CommunityUser
     suspend fun createListing(token: String, listing: NewListing): Listing
     suspend fun createBatch(token: String, listings: List<NewListing>): List<Listing>
     suspend fun nearby(token: String, lat: Double, lon: Double, radiusKm: Double, sortByUrgency: Boolean): List<Listing>
@@ -94,6 +96,12 @@ class HttpCommunityApi(private val baseUrl: String = BuildConfig.COMMUNITY_API_U
         val body = JSONObject().put("accountType", if (isShop) "shop" else "person")
         name?.let { body.put("name", it) }
         shop?.into(body)
+        return CommunityJson.user(call("PATCH", "/me", token, body).getJSONObject("user"))
+    }
+
+    override suspend fun updateAlerts(token: String, radiusKm: Double, lat: Double?, lon: Double?): CommunityUser {
+        val body = JSONObject().put("notifyRadiusKm", radiusKm)
+        if (lat != null && lon != null) { body.put("lat", lat); body.put("lon", lon) }
         return CommunityJson.user(call("PATCH", "/me", token, body).getJSONObject("user"))
     }
 

@@ -167,4 +167,3 @@ class CommunityViewModel(val container: AppContainer) : ViewModel() {
 
     suspend fun currentLocation(context: Context): LatLon? = location ?: container.location.current(context)?.also { location = it }
 }
-

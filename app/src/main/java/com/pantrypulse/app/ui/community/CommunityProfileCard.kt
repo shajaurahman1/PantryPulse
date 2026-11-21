@@ -129,4 +129,3 @@ fun CommunityProfileCard(vm: MainViewModel, cvm: CommunityViewModel, onOpenGivea
         }
     }
 }
-

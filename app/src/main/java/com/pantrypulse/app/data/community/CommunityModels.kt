@@ -14,6 +14,8 @@ data class CommunityUser(
     val openingHours: String?,
     val lat: Double?,
     val lon: Double?,
+    /** 0 = no alerts. Otherwise the person is told about new giveaways within this many km. */
+    val notifyRadiusKm: Double = 0.0,
 )
 
 enum class ClaimMode(val wire: String) { DIRECT("direct"), APPROVAL("approval") }
@@ -110,6 +112,7 @@ object CommunityJson {
         openingHours = o.optStr("openingHours"),
         lat = o.optDbl("lat"),
         lon = o.optDbl("lon"),
+        notifyRadiusKm = o.optDouble("notifyRadiusKm", 0.0).takeIf { !it.isNaN() } ?: 0.0,
     )
 
     fun listing(o: JSONObject): Listing {

@@ -37,6 +37,27 @@ jobs:
       - name: Unit & UI tests
         run: ./gradlew :app:testDebugUnitTest
 
+      # Optional but recommended: sign every build with YOUR key so each new APK installs over the
+      # previous one. Add these repository secrets (Settings > Secrets and variables > Actions):
+      #   PANTRYPULSE_KEYSTORE_BASE64, PANTRYPULSE_KEYSTORE_PASSWORD, PANTRYPULSE_KEY_ALIAS, PANTRYPULSE_KEY_PASSWORD
+      # Without them the build falls back to a throw-away debug key (a different one on every run).
+      - name: Set up release signing
+        env:
+          KEYSTORE_B64: ${{ secrets.PANTRYPULSE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.PANTRYPULSE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PANTRYPULSE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.PANTRYPULSE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/pantrypulse.jks"
+            echo "PANTRYPULSE_KEYSTORE=$RUNNER_TEMP/pantrypulse.jks" >> "$GITHUB_ENV"
+            echo "PANTRYPULSE_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "PANTRYPULSE_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "PANTRYPULSE_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "No signing secrets set; using the debug key."
+          fi
+
       - name: Build APK and App Bundle
         run: |
           ./gradlew :app:assembleRelease :app:bundleRelease

@@ -102,6 +102,7 @@ function userView(u) {
     openingHours: u.opening_hours ?? null,
     lat: u.lat ?? null,
     lon: u.lon ?? null,
+    notifyRadiusKm: u.notify_radius_km ?? 0,
   };
 }
 
@@ -142,6 +143,11 @@ function validateAccount(body, { partial = false } = {}) {
       out.lat = coord(body.lat, 'lat', -90, 90);
       out.lon = coord(body.lon, 'lon', -180, 180);
     }
+  }
+  if (body.notifyRadiusKm !== undefined) {
+    const km = Number(body.notifyRadiusKm);
+    if (!Number.isFinite(km) || km < 0 || km > MAX_ALERT_KM) throw bad('invalid_radius', `notifyRadiusKm must be between 0 and ${MAX_ALERT_KM}`);
+    out.notify_radius_km = km;
   }
   if (out.account_type === 'shop' && !partial && !out.shop_name) throw bad('missing_field', 'shopName is required for shop accounts');
   return out;
@@ -240,6 +246,7 @@ function insertListingStmt(donorId, l) {
   const now = clock();
   return {
     id,
+    l,
     stmt: {
       sql: `INSERT INTO listings (id, donor_id, title, category, quantity_text, notes, item_expiry, pickup_deadline, lat, lon,
               area_label, pickup_address, pickup_instructions, claim_mode, status, client_product_id, created_at, updated_at)
@@ -250,10 +257,52 @@ function insertListingStmt(donorId, l) {
   };
 }
 
+/** Largest alert radius a person can choose. */
+const MAX_ALERT_KM = 50;
+
+/**
+ * Tells people who opted in to nearby alerts (notify_radius_km > 0 and an approximate location)
+ * about new giveaways inside their own radius. A batch from one shop sends one alert, not one per item.
+ * Only the bucketed distance is shared, never the exact pickup point. Never fails the listing request.
+ */
+async function notifyNearby(donor, created) {
+  try {
+    if (!created.length) return;
+    const { lat, lon } = created[0].l;
+    const dLat = MAX_ALERT_KM / 111.32;
+    const dLon = MAX_ALERT_KM / (111.32 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
+    const rs = await db().execute({
+      sql: `SELECT id, lat, lon, notify_radius_km FROM users
+            WHERE id != ? AND notify_radius_km > 0 AND lat IS NOT NULL AND lon IS NOT NULL
+              AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? LIMIT 500`,
+      args: [donor.id, lat - dLat, lat + dLat, lon - dLon, lon + dLon],
+    });
+    const who = donor.account_type === 'shop' && donor.shop_name ? donor.shop_name : null;
+    const now = clock();
+    const stmts = [];
+    for (const u of rs.rows) {
+      const km = distanceKm(lat, lon, u.lat, u.lon);
+      if (km > u.notify_radius_km) continue;
+      const { distanceLabel } = publicDistance(km);
+      const message = created.length === 1
+        ? `New giveaway nearby: “${created[0].l.title}” — ${distanceLabel} away.`
+        : `${who ?? 'A neighbour'} has ${created.length} items to give away — ${distanceLabel} away.`;
+      stmts.push({
+        sql: 'INSERT INTO events (user_id, type, listing_id, message, created_at) VALUES (?, ?, ?, ?, ?)',
+        args: [u.id, 'nearby', created.length === 1 ? created[0].id : null, message, now],
+      });
+    }
+    if (stmts.length) await db().batch(stmts, 'write');
+  } catch (e) {
+    console.error('notifyNearby failed', e);
+  }
+}
+
 async function createListing(user, body) {
   const l = validateListing(body, user);
   const { id, stmt } = insertListingStmt(user.id, l);
   await db().execute(stmt);
+  await notifyNearby(user, [{ id, l }]);
   return { listing: await loadView(id, user) };
 }
 
@@ -265,6 +314,7 @@ async function createBatch(user, body) {
   const shared = body.shared || {};
   const prepared = items.map((item) => insertListingStmt(user.id, validateListing({ ...shared, ...item }, user)));
   await db().batch(prepared.map((p) => p.stmt), 'write');
+  await notifyNearby(user, prepared);
   const listings = [];
   for (const p of prepared) listings.push(await loadView(p.id, user));
   return { listings };
